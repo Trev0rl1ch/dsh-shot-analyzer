@@ -1,0 +1,15 @@
+# ============================================================================
+# dsh-shot-analyzer —— DSH bundle patch
+# ============================================================================
+# 本文件是插件的「挂载声明」：DSH 启动时按 bundle 层栈叠加各插件 patch，
+# 这里把插件本体插入当前 profile 的配置树。
+#
+# 安装：
+#   dsh plugin --profile desktop add link:<本目录绝对路径>
+# 或直接把它放进 $DSH_PROFILE_DIR/package.json 的 dependencies 与
+# dsh.profile.bundles。
+# ============================================================================
+
+- insert:
+    - id: dsh-shot-analyzer
+      name: dsh-shot-analyzer
