@@ -16,12 +16,13 @@ DSH 截图分析插件：**输入框右边多一个 📷 按钮**。按一下 �
 
 ## 目录
 
+- [安装 / 卸载](#安装--卸载) ← **先看这个：只解压文件是不会生效的**
 - 装了什么
 - 按钮在哪 / 怎么用
 - 配置
+- 图片存到哪 / 会不会越攒越多
 - 它怎么工作
 - 已知限制
-- 安装 / 卸载
 
 ## 装了什么
 
@@ -152,19 +153,63 @@ HighQualityBicubic 等比缩小，最后存 PNG。截图失败时会按尺寸阶
 - **投递走 `sessionController`。** 若宿主组合里没有这个服务，截图仍会存盘，
   接口会返回 `delivered:false` 与原因。
 - **默认会把图发进会话**，也就是会**消耗一次模型轮次**。只想截图时把 `autoSend` 设为 `false`。
+- **兼容性**：在 DSH 桌面版 `0.2.1-rc.2` 上实测通过。包内**没有**声明 `engines.dsh`，
+  所以版本不匹配时不会被安装器挡住，但也不会提前报错。它依赖宿主签名
+  `ctx.sessionController.prompt(request, signal)`；若该签名将来变了，投递会失败并返回
+  `delivered:false` + 原因，**截图本身仍然会存盘**，不会静默丢东西。
 
 ## 安装 / 卸载
 
-```powershell
-# 安装（本目录是插件包根）
-dsh plugin --profile desktop add link:<本目录绝对路径>
+> ⚠️ **只把仓库解压到磁盘是不会生效的。** DSH 不会去扫描目录，必须用下面的命令把它登记成一个 bundle；
+> 少这一步，界面上永远不会有按钮，而日志里也不会有任何报错。
 
-# 卸载
-dsh plugin --profile desktop remove dsh-shot-analyzer
+### 安装
+
+**1. 放到一个长期保留的位置**（别留在"下载"文件夹里）。
+`link:` 装的是**软链接**，之后删掉 / 移动 / 重命名这个目录，插件就会变成断链。
+
+```powershell
+git clone https://github.com/Trev0rl1ch/dsh-shot-analyzer C:\Tools\dsh-shot-analyzer
+# 下载 ZIP 的，解压到同样固定、不带中文和空格的位置即可
 ```
 
-或者用 DSH 界面的「设置 → 插件」。当前 desktop profile 已按 `link:` 方式安装，
-插件源码同时复制到了 `$DSH_PROFILE_DIR/plugins/dsh-shot-analyzer/` 并已启用。
+**2. 装到「你正在用的那个 profile」**。`<profile>` 换成你的 profile 名 ——
+Windows 桌面客户端一般叫 `desktop`，用 `dsh web` 起的通常是 `web`。不确定就先看一眼：
+
+```powershell
+dir "$env:USERPROFILE\.dsh\profiles"
+```
+
+```powershell
+dsh plugin --profile <profile> add link:C:/Tools/dsh-shot-analyzer
+```
+
+如果提示 `dsh` 不是可识别的命令（桌面版不一定会把它加进 PATH），用完整路径：
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd" `
+    plugin --profile <profile> add link:C:/Tools/dsh-shot-analyzer
+```
+
+**3. 重启 DSH。** 宿主半侧的代码只在启动时加载，不重启看不到效果。
+
+**4. 验证。** 随便打开一个会话，输入框右侧出现 📷 就说明好了；也可以直接问宿主
+（端口看你地址栏里的那个）：
+
+```powershell
+curl.exe http://127.0.0.1:<端口>/dsh-shot/state.json
+```
+
+返回 `{"ok":true,"last":null}` 说明宿主路由已经就位。
+
+### 卸载
+
+```powershell
+dsh plugin --profile <profile> remove dsh-shot-analyzer
+```
+
+`remove` 会同时清掉 `dependencies` 和 `dsh.profile.bundles` 里的条目（已实测），
+再重启 DSH 即可。也可以改用 DSH 界面的「设置 → 插件」。
 
 ## 许可
 
